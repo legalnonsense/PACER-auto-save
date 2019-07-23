@@ -19,25 +19,19 @@ if not creds or creds.invalid:
 
 GMAIL = discovery.build('gmail', 'v1', http=creds.authorize(Http()))
 
-
-
-
-
-
 # this will get a list of messages, which will will return a list of messages matching the search
 messages=GMAIL.users().messages().list(userId='me', q='from:ECFdocuments@pacerpro.com is:unread', format='full').execute()
-
-# ['messages'][0]['id'] will get the message ID 
 
 # this will get the specific message
 message=GMAIL.users().messages().get(userId='me', id='MESSAGE ID', format='full').execute()
 
 # this will get the attachment
 attachment=GMAIL.users().messages().attachments().get(userId='me', messageId='MESSAGE ID', id='ATTACHMENT ID').execute() 
+# question: what if there are multiple attachments?
+
 
 #figure out the file name
-
-#figure out the path 
+#figure out the path
 
 
 # this will write the attachment to a file
