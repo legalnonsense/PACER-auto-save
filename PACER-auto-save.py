@@ -7,6 +7,46 @@ from oauth2client import file, client, tools
 import os
 import re
 import base64
+import html
+
+def save_pdf_attachment(request_id, response, exception):
+    if exception is not None:
+        print('messages.get failed for message id {}: {}'.format(request_id, exception))
+    else:
+        for part in response['payload']['parts'][1:]:
+            if part['mimeType'] == 'application/pdf':
+                attachment_id = part['body']['attachmentId']
+                message_id = m['id']
+
+
+                try:
+                    
+                    filename = (re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(1) 
+                                + " - "
+                                + re.search(r'\[dckt\s(\d+_\d+)\]', part['filename']).group(1)
+                                + " - "
+                                + re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(2))
+                except:
+
+
+                    try:
+                        filename = (re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(1) 
+                                    + " - "
+                                    + re.search(r'\[dckt\s(\d+_\d+)\]', part['filename']).group(1))
+                    except:
+                        filename = (re.seasrch(r'(.+?\s).+?(\d+_\d+)(.+)'
+                        
+                    
+                filename = html.unescape(filename[:150])
+                
+
+                attachment=GMAIL.users().messages().attachments().get(userId='me', messageId=message_id, id=attachment_id).execute() 
+                #print("message_id: {}; filename: {}; attachment_id: {}".format(message_id, filename, attachment_id))
+            
+                # this will write the attachment to a file
+                with open (PATH + filename, 'wb') as f:
+                    f.write(base64.urlsafe_b64decode(attachment['data'].encode('UTF-8')))
+                    print("Saved file: {}".format( PATH+ filename))
 
 
 PATH = "/home/jeff/Cases/Dockets/"
@@ -24,24 +64,6 @@ GMAIL = discovery.build('gmail', 'v1', http=creds.authorize(Http()))
 #message_list=GMAIL.users().messages().list(userId='me', q='from:ECFdocuments@pacerpro.com is:unread').execute()
 message_list_api=GMAIL.users().messages()
 message_list_req = message_list_api.list(userId='me', q='from:ECFdocuments@pacerpro.com')
-
-
-def save_pdf_attachment(request_id, response, exception):
-    if exception is not None:
-        print('messages.get failed for message id {}: {}'.format(request_id, exception))
-    else:
-        for part in response['payload']['parts'][1:]:
-            if part['mimeType'] == 'application/pdf':
-                attachment_id = part['body']['attachmentId']
-                message_id = m['id']
-                filename = response['snippet'].split(' ')[0] + ' _ ' + part['filename']
-                attachment=GMAIL.users().messages().attachments().get(userId='me', messageId=message_id, id=attachment_id).execute() 
-                #print("message_id: {}; filename: {}; attachment_id: {}".format(message_id, filename, attachment_id))
-            
-                # this will write the attachment to a file
-                with open (PATH + filename, 'wb') as f:
-                    f.write(base64.urlsafe_b64decode(attachment['data'].encode('UTF-8')))
-                    print("Saved file: {}".format( PATH+ filename))
 
 while message_list_req is not None:
     gmail_msg_list = message_list_req.execute()
