@@ -18,7 +18,6 @@ def save_pdf_attachment(request_id, response, exception):
                 attachment_id = part['body']['attachmentId']
                 message_id = m['id']
 
-
                 try:
                     
                     filename = (re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(1) 
@@ -27,28 +26,34 @@ def save_pdf_attachment(request_id, response, exception):
                                 + " - "
                                 + re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(2))
                 except:
-
-
                     try:
                         filename = (re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(1) 
                                     + " - "
                                     + re.search(r'\[dckt\s(\d+_\d+)\]', part['filename']).group(1))
                     except:
-                        filename = (re.seasrch(r'(.+?\s).+?(\d+_\d+)(.+)'
+                        filename = response['snippet'].split(' ')[0] + ' _ ' + part['filename']
                         
                     
                 filename = html.unescape(filename[:150])
-                
+
+                #filename = filename.replace('(', '')
+                #filename = filename.replace(')', '')
+
+                filename = filename.strip() + '.pdf'
 
                 attachment=GMAIL.users().messages().attachments().get(userId='me', messageId=message_id, id=attachment_id).execute() 
                 #print("message_id: {}; filename: {}; attachment_id: {}".format(message_id, filename, attachment_id))
-            
-                # this will write the attachment to a file
-                with open (PATH + filename, 'wb') as f:
-                    f.write(base64.urlsafe_b64decode(attachment['data'].encode('UTF-8')))
-                    print("Saved file: {}".format( PATH+ filename))
 
+                if (filename and attachment):
+                    # this will write the attachment to a file
+                    print('got this far')
+                    with open (PATH + filename, 'wb') as f:
+                        print("Saved file: {}".format( PATH+ filename))
+                        f.write(base64.urlsafe_b64decode(attachment['data'].encode('UTF-8')))
 
+                filename = ''
+                attachment = None 
+                        
 PATH = "/home/jeff/Cases/Dockets/"
 SCOPES = 'https://www.googleapis.com/auth/gmail.readonly'
 store = file.Storage(os.path.expanduser('~/.config/i3/py3status/token.json'))
