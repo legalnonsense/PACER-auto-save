@@ -68,9 +68,10 @@ http = Http()
 GMAIL = discovery.build('gmail', 'v1', http=creds.authorize(Http()))
 
 # this will get a list of messages, which will will return a list of messages matching the search
+#message_list_req = message_list_api.list(userId='me', q='from:ECFdocuments@pacerpro.com')
 message_list=GMAIL.users().messages().list(userId='me', q='from:ECFdocuments@pacerpro.com is:unread').execute()
-#message_list_api=GMAIL.users().messages()
-message_list_req = message_list_api.list(userId='me', q='from:ECFdocuments@pacerpro.com')
+message_list_api=GMAIL.users().messages()
+
 
 while message_list_req is not None:
     gmail_msg_list = message_list_req.execute()
