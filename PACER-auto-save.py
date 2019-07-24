@@ -17,32 +17,41 @@ if not creds or creds.invalid:
     flow = client.flow_from_clientsecrets(os.path.expanduser('~/.config/i3/py3status/credentials.json'), SCOPES)
     creds = tools.run_flow(flow, store)
 
-    
+http = Http()    
 GMAIL = discovery.build('gmail', 'v1', http=creds.authorize(Http()))
 
 # this will get a list of messages, which will will return a list of messages matching the search
-message_list=GMAIL.users().messages().list(userId='me', q='from:ECFdocuments@pacerpro.com is:unread').execute()
-#message_list=GMAIL.users().messages().list(userId='me', q='from:ECFdocuments@pacerpro.com').execute()
+#message_list=GMAIL.users().messages().list(userId='me', q='from:ECFdocuments@pacerpro.com is:unread').execute()
+message_list_api=GMAIL.users().messages()
+message_list_req = message_list_api.list(userId='me', q='from:ECFdocuments@pacerpro.com')
 
 
-
-if message_list['resultSizeEstimate'] > 0:
-
-    for m in message_list['messages']: 
-
-        message = GMAIL.users().messages().get(userId='me', id=m['id'], format='full').execute()
-
-        for part in message['payload']['parts'][1:]:
-
+def save_pdf_attachment(request_id, response, exception):
+    if exception is not None:
+        print('messages.get failed for message id {}: {}'.format(request_id, exception))
+    else:
+        for part in response['payload']['parts'][1:]:
             if part['mimeType'] == 'application/pdf':
                 attachment_id = part['body']['attachmentId']
                 message_id = m['id']
-                filename = message['snippet'].split(' ')[0] + ' _ ' + part['filename']
+                filename = response['snippet'].split(' ')[0] + ' _ ' + part['filename']
                 attachment=GMAIL.users().messages().attachments().get(userId='me', messageId=message_id, id=attachment_id).execute() 
                 #print("message_id: {}; filename: {}; attachment_id: {}".format(message_id, filename, attachment_id))
             
                 # this will write the attachment to a file
                 with open (PATH + filename, 'wb') as f:
                     f.write(base64.urlsafe_b64decode(attachment['data'].encode('UTF-8')))
+                    print("Saved file: {}".format( PATH+ filename))
 
-                print("Saved file: {}".format( PATH+ filename))
+while message_list_req is not None:
+    gmail_msg_list = message_list_req.execute()
+    batch = GMAIL.new_batch_http_request(callback=save_pdf_attachment)
+
+    for m in gmail_msg_list['messages']: 
+
+        batch.add(GMAIL.users().messages().get(userId='me', id=m['id'], format='full'), request_id=m['id'])
+
+    batch.execute(http=http)
+            
+
+    message_list_req = message_list_api.list_next(message_list_req, gmail_msg_list)
