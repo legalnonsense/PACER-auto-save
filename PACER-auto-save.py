@@ -18,31 +18,32 @@ def save_pdf_attachment(request_id, response, exception):
                 attachment_id = part['body']['attachmentId']
                 message_id = m['id']
 
-                # try:
+                try:
                     
-                #     filename = (re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(1) 
-                #                 + " - "
-                #                 + re.search(r'\[dckt\s(\d+_\d+)\]', part['filename']).group(1)
-                #                 + " - "
-                #                 + re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(2))
-                # except:
-                #     try:
-                #         filename = (re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(1) 
-                #                     + " - "
-                #                     + re.search(r'\[dckt\s(\d+_\d+)\]', part['filename']).group(1))
-                #     except:
-                #         filename = response['snippet'].split(' ')[0] + ' _ ' + part['filename']
+                    filename = (re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(1) 
+                                + " - "
+                                + re.search(r'\[dckt\s(\d+_\d+)\]', part['filename']).group(1)
+                                + " - "
+                                + re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(2))
+                except:
+                    try:
+                        filename = (re.search(r'(.+?\sv\.\s.+?)\s(?:.+?Docket\sentry\snumber\:\s\d+[^\s]+\s)(.+)', response['snippet']).group(1) 
+                                    + " - "
+                                    + re.search(r'\[dckt\s(\d+_\d+)\]', part['filename']).group(1))
+                    except:
+                        filename = response['snippet'].split(' ')[0] + ' _ ' + part['filename']
                         
                     
-                # filename = html.unescape(filename[:150])
+                filename = html.unescape(filename[:250])
 
-                # #filename = filename.replace('(', '')
-                # #filename = filename.replace(')', '')
+                # filename = filename.replace('(', '')
+                # filename = filename.replace(')', '')
+                filename = filename.replace('/', '-')
 
-                # filename = filename.strip() + '.pdf'
+                filename = filename.strip() + '.pdf'
 
 
-                filename = response['snippet'].split(' ')[0] + ' _ ' + part['filename']
+                #filename = response['snippet'].split(' ')[0] + ' _ ' + part['filename']
                 
                 attachment=GMAIL.users().messages().attachments().get(userId='me', messageId=message_id, id=attachment_id).execute() 
                 #print("message_id: {}; filename: {}; attachment_id: {}".format(message_id, filename, attachment_id))
@@ -69,8 +70,13 @@ GMAIL = discovery.build('gmail', 'v1', http=creds.authorize(Http()))
 
 # this will get a list of messages, which will will return a list of messages matching the search
 message_list_api=GMAIL.users().messages()
+
+
 message_list_req = message_list_api.list(userId='me', q='from:ECFdocuments@pacerpro.com is:unread')
 message_list=GMAIL.users().messages().list(userId='me', q='from:ECFdocuments@pacerpro.com is:unread').execute()
+
+# message_list_req = message_list_api.list(userId='me', q='from:ECFdocuments@pacerpro.com')
+# message_list=GMAIL.users().messages().list(userId='me', q='from:ECFdocuments@pacerpro.com').execute()
 
 
 
